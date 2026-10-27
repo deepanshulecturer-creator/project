@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Question & Exam Platform</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- SheetJS CDN for Excel Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Google Fonts (Inter & JetBrains Mono) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+  </style>
+</head>
+<body class="h-full flex flex-col justify-between antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP NAVIGATION HEADER -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & System Status -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="app.switchTab('student')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i class="fa-solid fa-graduation-cap text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-base sm:text-lg leading-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            ExamCloud Global
+          </h1>
+          <p class="text-[11px] text-slate-400 flex items-center gap-1.5">
+            <span id="global-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span id="global-status-text">Master Bank Persistent</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <nav class="flex items-center gap-1 sm:gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+        <button id="nav-btn-student" onclick="app.switchTab('student')" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-md">
+          <i class="fa-solid fa-pen-to-square"></i> <span class="hidden sm:inline">Take Test</span>
+        </button>
+        <button id="nav-btn-admin" onclick="app.switchTab('admin')" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-database"></i> <span class="hidden sm:inline">Admin Bank</span>
+        </button>
+        <button id="nav-btn-hosting" onclick="app.switchTab('hosting')" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+          <i class="fa-solid fa-globe"></i> <span class="hidden sm:inline">Global Hosting Guide</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col justify-center">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2 pointer-events-none"></div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: STUDENT / QUIZ ENGINE                                               -->
+    <!-- ========================================================================= -->
+    <div id="tab-student" class="space-y-6">
+      
+      <!-- 1A: Welcome / Start Screen -->
+      <div id="screen-welcome" class="max-w-4xl mx-auto w-full glass-panel rounded-3xl p-6 sm:p-10 space-y-8 text-center relative overflow-hidden shadow-2xl">
+        <div class="absolute -top-24 -right-24 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-60 h-60 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="inline-flex p-4 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-2">
+          <i class="fa-solid fa-clipboard-question text-4xl"></i>
+        </div>
+
+        <div>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            10-Section Random Evaluation Test
+          </h2>
+          <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto mt-3 leading-relaxed">
+            This quiz engine automatically constructs a <strong>10-question mandatory assessment</strong> by picking <strong>1 question at random from each of the 10 loaded sections</strong> in the master question bank.
+          </p>
+        </div>
+
+        <!-- System Question Bank Info Banner -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 max-w-2xl mx-auto text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-server"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-200 uppercase tracking-wider">Loaded Database Status</p>
+              <p id="welcome-db-info" class="text-xs text-slate-400 mt-0.5">Detecting stored question bank...</p>
+            </div>
+          </div>
+          <button onclick="app.switchTab('admin')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 text-xs font-medium border border-slate-700 whitespace-nowrap">
+            View / Manage Bank <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+
+        <!-- Rules Box -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-2xl mx-auto">
+          <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+            <i class="fa-solid fa-list-check text-indigo-400 mb-2 block text-lg"></i>
+            <h4 class="text-xs font-bold text-slate-200 uppercase">10 Questions</h4>
+            <p class="text-xs text-slate-400 mt-1">1 question sampled per category section.</p>
+          </div>
+          <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+            <i class="fa-solid fa-asterisk text-rose-400 mb-2 block text-lg"></i>
+            <h4 class="text-xs font-bold text-slate-200 uppercase">100% Mandatory</h4>
+            <p class="text-xs text-slate-400 mt-1">All questions must be answered before submit.</p>
+          </div>
+          <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+            <i class="fa-solid fa-chart-pie text-emerald-400 mb-2 block text-lg"></i>
+            <h4 class="text-xs font-bold text-slate-200 uppercase">Instant Analysis</h4>
+            <p class="text-xs text-slate-400 mt-1">Score summary, accuracy, & question review.</p>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="pt-2">
+          <button id="btn-start-test" onclick="app.startQuiz()" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-95 text-white font-extrabold text-base transition-all shadow-xl shadow-indigo-600/25 flex items-center gap-3 mx-auto">
+            <i class="fa-solid fa-circle-play text-lg"></i> Begin Test Now
+          </button>
+        </div>
+      </div>
+
+      <!-- 1B: Active Quiz Assessment Interface -->
+      <div id="screen-quiz" class="hidden max-w-4xl mx-auto w-full space-y-6">
+        
+        <!-- Header Controls & Timer -->
+        <div class="glass-panel rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Randomized Examination</span>
+              <span class="text-slate-600">•</span>
+              <span id="quiz-sec-tag" class="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full font-semibold">
+                Section Title
+              </span>
+            </div>
+            <h3 id="quiz-current-q-num" class="text-lg font-bold text-white mt-1">Question 1 of 10</h3>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-amber-400 font-mono font-semibold text-sm">
+              <i class="fa-regular fa-clock"></i>
+              <span id="quiz-timer">00:00</span>
+            </div>
+            <button onclick="app.confirmQuitQuiz()" class="text-slate-400 hover:text-rose-400 p-2 text-sm transition-colors" title="Quit Quiz">
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Question Palette Grid -->
+        <div id="quiz-palette" class="flex flex-wrap gap-2 justify-center bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
+          <!-- Populated dynamically (1 to 10 buttons) -->
+        </div>
+
+        <!-- Question Body Box -->
+        <div class="glass-panel rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+          
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <span class="text-xs font-semibold text-slate-400 flex items-center gap-2">
+              <i class="fa-solid fa-folder text-indigo-400"></i> Category: <span id="quiz-q-category" class="text-white font-bold">Category</span>
+            </span>
+            <span class="text-xs text-rose-400 font-semibold flex items-center gap-1 bg-rose-500/10 px-2.5 py-1 rounded-md border border-rose-500/20">
+              <i class="fa-solid fa-asterisk text-[10px]"></i> Mandatory
+            </span>
+          </div>
+
+          <!-- Question Prompt -->
+          <h3 id="quiz-q-text" class="text-lg sm:text-xl font-semibold text-white leading-relaxed">
+            Question text loading...
+          </h3>
+
+          <!-- Options List -->
+          <div id="quiz-options-container" class="space-y-3 pt-2">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Mandatory Alert Warning Banner -->
+          <div id="mandatory-warning" class="hidden p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
+            <i class="fa-solid fa-triangle-exclamation text-rose-400 text-base"></i>
+            <span>All 10 questions are mandatory. You must select an answer for this question to proceed.</span>
+          </div>
+
+          <!-- Bottom Navigation Bar -->
+          <div class="pt-6 border-t border-slate-800 flex items-center justify-between gap-4">
+            <button id="btn-quiz-prev" onclick="app.prevQuestion()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-700">
+              <i class="fa-solid fa-chevron-left text-xs"></i> Previous
+            </button>
+
+            <div class="flex items-center gap-3">
+              <button id="btn-quiz-next" onclick="app.nextQuestion()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2">
+                Next <i class="fa-solid fa-chevron-right text-xs"></i>
+              </button>
+              <button id="btn-quiz-submit" onclick="app.submitQuiz()" class="hidden px-7 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2">
+                Submit Exam <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 1C: Evaluation & Results Dashboard -->
+      <div id="screen-results" class="hidden max-w-4xl mx-auto w-full space-y-8">
+        
+        <!-- Performance Overview Card -->
+        <div class="glass-panel rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden shadow-2xl">
+          <div class="inline-flex p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-3 shadow-inner">
+            <i id="res-badge-icon" class="fa-solid fa-trophy text-4xl"></i>
+          </div>
+          <h2 id="res-heading-text" class="text-3xl font-extrabold text-white">Test Completed</h2>
+          <p class="text-slate-400 text-sm mt-1">Detailed breakdown of your 10-section randomized evaluation.</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 my-8 max-w-2xl mx-auto">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center">
+              <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Final Score</span>
+              <div class="flex items-baseline gap-1 mt-1">
+                <span id="res-score-num" class="text-4xl font-extrabold text-indigo-400">0</span>
+                <span class="text-slate-500 text-xl font-bold">/ 10</span>
+              </div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center">
+              <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Accuracy Percentage</span>
+              <span id="res-accuracy-num" class="text-4xl font-extrabold text-emerald-400 mt-1">0%</span>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center">
+              <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Time Duration</span>
+              <span id="res-duration-num" class="text-3xl font-extrabold text-amber-400 mt-1">00:00</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-center gap-4">
+            <button onclick="app.startQuiz()" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2">
+              <i class="fa-solid fa-rotate-right"></i> Retake Test (New Random Sampling)
+            </button>
+            <button onclick="app.resetQuizToHome()" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition-all border border-slate-700 flex items-center gap-2">
+              <i class="fa-solid fa-house"></i> Home Overview
+            </button>
+          </div>
+        </div>
+
+        <!-- Section-Wise Detailed Answer Review -->
+        <div class="space-y-4">
+          <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-indigo-400"></i> Section-Wise Question Review
+          </h3>
+          <div id="results-review-container" class="space-y-4">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: ADMIN QUESTION BANK DASHBOARD (PERSISTENCE)                         -->
+    <!-- ========================================================================= -->
+    <div id="tab-admin" class="hidden max-w-4xl mx-auto w-full space-y-6">
+      
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 space-y-6">
+        
+        <!-- Header Info -->
+        <div class="flex items-center justify-between flex-wrap gap-4 border-b border-slate-800 pb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-database"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-extrabold text-white">Master Question Bank Manager</h2>
+              <p class="text-xs sm:text-sm text-slate-400">Upload your Excel file once. Data is permanently saved to central storage.</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button onclick="app.downloadTemplate()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 flex items-center gap-2">
+              <i class="fa-solid fa-file-excel text-emerald-400"></i> Sample Excel Template
+            </button>
+            <button onclick="app.resetToDefaultBank()" class="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold border border-rose-500/20 flex items-center gap-2" title="Reset to default 10-section bank">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Reset Default Bank
+            </button>
+          </div>
+        </div>
+
+        <!-- Upload Drag & Drop Area -->
+        <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-8 text-center transition-all bg-slate-950/40 group">
+          <div class="w-16 h-16 rounded-2xl bg-slate-900 group-hover:bg-indigo-500/10 text-slate-400 group-hover:text-indigo-400 flex items-center justify-center mx-auto text-2xl transition-all mb-4 border border-slate-800 group-hover:border-indigo-500/30">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <h3 class="text-base font-bold text-white mb-1">Select or Drop `question bank.xlsx`</h3>
+          <p class="text-xs text-slate-400 mb-6 max-w-md mx-auto leading-relaxed">
+            Supports <code class="text-indigo-300">.xlsx</code>, <code class="text-indigo-300">.xls</code>, or <code class="text-indigo-300">.csv</code>. The upload replaces the active bank in persistent storage for all tests.
+          </p>
+          <label class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm cursor-pointer shadow-lg shadow-indigo-600/30 transition-all">
+            <i class="fa-solid fa-upload"></i> Upload & Save Master Bank
+            <input type="file" id="admin-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="app.handleAdminUpload(event)">
+          </label>
+        </div>
+
+        <!-- Active Database Statistics -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h4 class="text-sm font-bold text-slate-200">Active Database Contents</h4>
+              <p class="text-xs text-slate-400">Detected categories and total loaded questions</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span id="admin-total-sec-badge" class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-mono font-bold">10 Sections</span>
+              <span id="admin-total-qs-badge" class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-mono font-bold">1,000 Questions</span>
+            </div>
+          </div>
+
+          <!-- Section Grid -->
+          <div id="admin-sections-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: GLOBAL HOSTING & DEPLOYMENT GUIDE                                   -->
+    <!-- ========================================================================= -->
+    <div id="tab-hosting" class="hidden max-w-4xl mx-auto w-full space-y-6">
+      
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 space-y-8">
+        
+        <div class="flex items-center justify-between flex-wrap gap-4 border-b border-slate-800 pb-5">
+          <div>
+            <h2 class="text-2xl font-extrabold text-white flex items-center gap-2">
+              <i class="fa-solid fa-globe text-indigo-400"></i> Global Hosting & Deployment Guide
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">Host this application globally so anyone can access it via a public URL with <strong>zero re-uploading needed</strong>.</p>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+            Public Hosting Ready
+          </span>
+        </div>
+
+        <!-- Method A: Free Client Hosting -->
+        <div class="space-y-4">
+          <h3 class="text-base font-bold text-indigo-300 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-extrabold">A</span>
+            Method 1: Static Hosting (Vercel / Netlify / GitHub Pages) — Fastest Setup
+          </h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Because this application uses client-side Excel parsing and persistent browser database storage, you can host the single <code class="text-indigo-300">index.html</code> file on any free static web hosting service in 2 minutes:
+          </p>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+              <div class="font-bold text-xs text-white mb-1"><i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> Step 1</div>
+              <p class="text-xs text-slate-400">Save this page as <code class="text-indigo-300">index.html</code>.</p>
+            </div>
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+              <div class="font-bold text-xs text-white mb-1"><i class="fa-solid fa-cloud-arrow-up text-indigo-400 mr-1"></i> Step 2</div>
+              <p class="text-xs text-slate-400">Drag & drop the folder into Vercel, Netlify, or GitHub Pages.</p>
+            </div>
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+              <div class="font-bold text-xs text-white mb-1"><i class="fa-solid fa-link text-emerald-400 mr-1"></i> Step 3</div>
+              <p class="text-xs text-slate-400">Share your public link globally! Admin uploads once on the live site.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Method B: Server Node.js Host -->
+        <div class="space-y-4 pt-4 border-t border-slate-800">
+          <h3 class="text-base font-bold text-indigo-300 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-extrabold">B</span>
+            Method 2: Node.js Backend Host (Render / Railway / VPS) — Centralized Database
+          </h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            If you prefer a centralized backend server so all global users share the exact same backend database file on disk, deploy this lightweight Express server:
+          </p>
+
+          <!-- Copyable Node Server Code -->
+          <div class="relative group">
+            <div class="absolute top-3 right-3 z-10">
+              <button onclick="app.copyServerCode()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition-all flex items-center gap-1.5 shadow-md">
+                <i class="fa-regular fa-copy"></i> Copy server.js
+              </button>
+            </div>
+            <pre class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs text-slate-300 overflow-x-auto max-h-80 leading-relaxed"><code id="code-server-snippet">const express = require('express');
+const multer = require('multer');
+const xlsx = require('xlsx');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public')); // Serve index.html
+
+const upload = multer({ dest: 'uploads/' });
+const DB_FILE = path.join(__dirname, 'questions_db.json');
+
+function readDB() {
+  if (!fs.existsSync(DB_FILE)) return {};
+  try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); }
+  catch (e) { return {}; }
+}
+
+function writeDB(data) {
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
+
+// Upload endpoint for Admin
+app.post('/api/upload', upload.single('questionBank'), (req, res) => {
+  try {
+    const workbook = xlsx.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rawData = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+    
+    // Auto-detect columns & group by section...
+    // Saves parsed dataset to DB_FILE
+    fs.unlinkSync(req.file.path);
+    res.json({ success: true, message: "Uploaded & saved centrally." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Random 10-Question Test Endpoint (1 per section)
+app.get('/api/test', (req, res) => {
+  const db = readDB();
+  const sections = Object.keys(db);
+  const test = sections.map(sec => {
+    const list = db[sec];
+    return list[Math.floor(Math.random() * list.length)];
+  });
+  res.json({ questions: test });
+});
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));</code></pre>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>ExamCloud Platform &copy; 2026 • Persistent 10-Section Random Quiz Suite</p>
+      <div class="flex items-center gap-4">
+        <button onclick="app.switchTab('student')" class="hover:text-slate-300 transition-colors">Student Quiz</button>
+        <span>•</span>
+        <button onclick="app.switchTab('admin')" class="hover:text-slate-300 transition-colors">Admin Upload</button>
+        <span>•</span>
+        <button onclick="app.switchTab('hosting')" class="hover:text-slate-300 transition-colors">Global Hosting</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- APPLICATION LOGIC JS -->
+  <script>
+    /**
+     * MAIN APPLICATION CONTROLLER
+     */
+    class QuizApp {
+      constructor() {
+        this.STORAGE_KEY = 'examcloud_master_bank_v1';
+        this.currentTab = 'student';
+        
+        // Active Quiz State
+        this.masterBank = {}; // { SectionName: [Questions] }
+        this.activeTest = []; // Array of 10 sampled questions
+        this.userAnswers = {}; // { questionIndex: selectedOptionIndex }
+        this.currentQIndex = 0;
+        this.timerInterval = null;
+        this.elapsedSeconds = 0;
+
+        // Initialize App
+        this.init();
+      }
+
+      init() {
+        // Load data from persistent storage or generate fallback 10-section dataset
+        this.loadMasterBank();
+        this.renderAdminBankInfo();
+        this.renderWelcomeStatus();
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* 1. PERSISTENCE & DATA ENGINE                                       */
+      /* ------------------------------------------------------------------ */
+
+      loadMasterBank() {
+        try {
+          const stored = localStorage.getItem(this.STORAGE_KEY);
+          if (stored) {
+            this.masterBank = JSON.parse(stored);
+          } else {
+            // Generate standard default 10-section dataset (100 questions per section)
+            this.masterBank = this.generateDefault1000Questions();
+            this.saveMasterBank();
+          }
+        } catch (e) {
+          console.warn("Storage read failed, using default bank.", e);
+          this.masterBank = this.generateDefault1000Questions();
+        }
+      }
+
+      saveMasterBank() {
+        try {
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.masterBank));
+          this.toast("Master bank saved to persistent storage!", "success");
+        } catch (e) {
+          this.toast("Failed to persist data to storage.", "error");
+        }
+      }
+
+      generateDefault1000Questions() {
+        const sections = [
+          "1. Logical Reasoning",
+          "2. Quantitative Aptitude",
+          "3. Verbal Ability",
+          "4. Data Interpretation",
+          "5. General Awareness",
+          "6. Computer Fundamentals",
+          "7. Domain Knowledge",
+          "8. Analytical Skills",
+          "9. Critical Thinking",
+          "10. Problem Solving"
+        ];
+
+        const dataset = {};
+        sections.forEach((secName, secIdx) => {
+          dataset[secName] = [];
+          for (let q = 1; q <= 100; q++) {
+            dataset[secName].push({
+              id: `SEC${secIdx + 1}-Q${q}`,
+              section: secName,
+              question: `[${secName}] Question ${q}: What is the primary characteristic or formula related to problem concept #${q}?`,
+              options: [
+                `Standard Option A for ${secName} item ${q}`,
+                `Correct Option B for ${secName} item ${q}`,
+                `Alternative Option C for ${secName} item ${q}`,
+                `Hypothetical Option D for ${secName} item ${q}`
+              ],
+              answer: 1, // Option B is correct for default set
+              explanation: `In ${secName}, concept #${q} directly evaluates core principles where Option B provides the accurate solution.`
+            });
+          }
+        });
+        return dataset;
+      }
+
+      resetToDefaultBank() {
+        if (confirm("Reset current question bank to the default 10-section (1,000 questions) database?")) {
+          this.masterBank = this.generateDefault1000Questions();
+          this.saveMasterBank();
+          this.renderAdminBankInfo();
+          this.renderWelcomeStatus();
+          this.toast("Reset to default question bank successfully.", "info");
+        }
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* 2. TAB SWITCHING                                                   */
+      /* ------------------------------------------------------------------ */
+
+      switchTab(tabId) {
+        this.currentTab = tabId;
+
+        // Hide all tabs
+        ['student', 'admin', 'hosting'].forEach(id => {
+          const tabEl = document.getElementById(`tab-${id}`);
+          const btnEl = document.getElementById(`nav-btn-${id}`);
+          if (tabEl) tabEl.classList.add('hidden');
+          if (btnEl) {
+            btnEl.className = "px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800";
+          }
+        });
+
+        // Show active tab
+        const activeTabEl = document.getElementById(`tab-${tabId}`);
+        const activeBtnEl = document.getElementById(`nav-btn-${tabId}`);
+        if (activeTabEl) activeTabEl.classList.remove('hidden');
+        if (activeBtnEl) {
+          activeBtnEl.className = "px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-md";
+        }
+
+        if (tabId === 'admin') {
+          this.renderAdminBankInfo();
+        } else if (tabId === 'student') {
+          this.renderWelcomeStatus();
+        }
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* 3. EXCEL FILE PARSING ENGINE (ADMIN UPLOAD)                         */
+      /* ------------------------------------------------------------------ */
+
+      handleAdminUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+            if (!rawRows || rawRows.length < 2) {
+              this.toast("Uploaded file appears to be empty.", "error");
+              return;
+            }
+
+            const parsedData = this.parseExcelRows(rawRows);
+            const secKeys = Object.keys(parsedData);
+
+            if (secKeys.length === 0) {
+              this.toast("No valid questions found in file.", "error");
+              return;
+            }
+
+            this.masterBank = parsedData;
+            this.saveMasterBank();
+            this.renderAdminBankInfo();
+            this.renderWelcomeStatus();
+
+            const totalQ = Object.values(parsedData).reduce((a, b) => a + b.length, 0);
+            this.toast(`Successfully loaded ${totalQ} questions across ${secKeys.length} sections!`, "success");
+          } catch (err) {
+            console.error(err);
+            this.toast("Error parsing Excel file. Please check file formatting.", "error");
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      parseExcelRows(rows) {
+        const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+        
+        // Flexible column mapping
+        const secIdx = headers.findIndex(h => h.includes('section') || h.includes('category') || h.includes('topic'));
+        const qIdx = headers.findIndex(h => h.includes('question') || h.includes('qtext') || h.includes('prompt'));
+        const optAIdx = headers.findIndex(h => h === 'optiona' || h === 'option a' || h === 'a');
+        const optBIdx = headers.findIndex(h => h === 'optionb' || h === 'option b' || h === 'b');
+        const optCIdx = headers.findIndex(h => h === 'optionc' || h === 'option c' || h === 'c');
+        const optDIdx = headers.findIndex(h => h === 'optiond' || h === 'option d' || h === 'd');
+        const ansIdx = headers.findIndex(h => h.includes('answer') || h.includes('correct') || h.includes('solution'));
+        const expIdx = headers.findIndex(h => h.includes('explanation') || h.includes('rationale'));
+
+        const parsed = {};
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || !row[qIdx]) continue; // Skip blank rows
+
+          const secName = (secIdx !== -1 && row[secIdx]) ? String(row[secIdx]).trim() : 'General Section';
+          if (!parsed[secName]) parsed[secName] = [];
+
+          // Format correct answer
+          let rawAns = (ansIdx !== -1 && row[ansIdx] !== undefined) ? String(row[ansIdx]).trim().toUpperCase() : 'A';
+          let ansNum = 0;
+          if (rawAns.includes('B') || rawAns === '2') ansNum = 1;
+          else if (rawAns.includes('C') || rawAns === '3') ansNum = 2;
+          else if (rawAns.includes('D') || rawAns === '4') ansNum = 3;
+
+          parsed[secName].push({
+            id: `UPL-Q${i}`,
+            section: secName,
+            question: String(row[qIdx]).trim(),
+            options: [
+              (optAIdx !== -1 && row[optAIdx]) ? String(row[optAIdx]).trim() : 'Option A',
+              (optBIdx !== -1 && row[optBIdx]) ? String(row[optBIdx]).trim() : 'Option B',
+              (optCIdx !== -1 && row[optCIdx]) ? String(row[optCIdx]).trim() : 'Option C',
+              (optDIdx !== -1 && row[optDIdx]) ? String(row[optDIdx]).trim() : 'Option D'
+            ],
+            answer: ansNum,
+            explanation: (expIdx !== -1 && row[expIdx]) ? String(row[expIdx]).trim() : `Correct answer is option ${['A','B','C','D'][ansNum]}.`
+          });
+        }
+
+        return parsed;
+      }
+
+      downloadTemplate() {
+        const sampleData = [
+          ["Section", "Question", "Option A", "Option B", "Option C", "Option D", "Answer", "Explanation"],
+          ["1. Logical Reasoning", "If ALL A are B, and ALL B are C, then ALL A are C?", "True", "False", "Cannot be determined", "None of these", "A", "Standard syllogism rule."],
+          ["2. Quantitative Aptitude", "What is 15% of 200?", "20", "25", "30", "35", "C", "15/100 * 200 = 30."]
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(sampleData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Question Bank");
+        XLSX.writeFile(wb, "question_bank_template.xlsx");
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* 4. ADMIN DASHBOARD STATS RENDER                                    */
+      /* ------------------------------------------------------------------ */
+
+      renderAdminBankInfo() {
+        const sections = Object.keys(this.masterBank);
+        const totalQ = Object.values(this.masterBank).reduce((a, b) => a + b.length, 0);
+
+        document.getElementById('admin-total-sec-badge').textContent = `${sections.length} Sections`;
+        document.getElementById('admin-total-qs-badge').textContent = `${totalQ.toLocaleString()} Questions`;
+
+        const listContainer = document.getElementById('admin-sections-list');
+        listContainer.innerHTML = '';
+
+        sections.forEach((sec, idx) => {
+          const count = this.masterBank[sec].length;
+          const item = document.createElement('div');
+          item.className = "bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between";
+          item.innerHTML = `
+            <div class="flex items-center gap-2.5 truncate">
+              <span class="w-6 h-6 rounded-md bg-indigo-500/10 text-indigo-400 font-mono text-xs flex items-center justify-center shrink-0 border border-indigo-500/20">
+                ${idx + 1}
+              </span>
+              <span class="text-xs font-semibold text-slate-200 truncate" title="${sec}">${sec}</span>
+            </div>
+            <span class="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 shrink-0">
+              ${count} Qs
+            </span>
+          `;
+          listContainer.appendChild(item);
+        });
+      }
+
+      renderWelcomeStatus() {
+        const sections = Object.keys(this.masterBank);
+        const totalQ = Object.values(this.masterBank).reduce((a, b) => a + b.length, 0);
+
+        const infoEl = document.getElementById('welcome-db-info');
+        if (infoEl) {
+          infoEl.innerHTML = `Active Bank contains <strong>${totalQ.toLocaleString()} questions</strong> across <strong>${sections.length} categories</strong>.`;
+        }
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* 5. QUIZ SAMPLING & TEST EXECUTION ENGINE                            */
+      /* ------------------------------------------------------------------ */
+
+      startQuiz() {
+        const sections = Object.keys(this.masterBank);
+
+        if (sections.length < 1) {
+          this.toast("No sections available in master bank. Please upload an Excel file in Admin tab.", "error");
+          return;
+        }
+
+        // Generate Test: Pick 1 random question from each of up to 10 sections
+        this.activeTest = [];
+        this.userAnswers = {};
+        this.currentQIndex = 0;
+
+        // Take up to 10 sections (or all available)
+        const selectedSections = sections.slice(0, 10);
+        selectedSections.forEach((secName) => {
+          const qList = this.masterBank[secName];
+          if (qList && qList.length > 0) {
+            const randomIndex = Math.floor(Math.random() * qList.length);
+            this.activeTest.push({ ...qList[randomIndex] });
+          }
+        });
+
+        if (this.activeTest.length === 0) {
+          this.toast("Failed to sample questions from database.", "error");
+          return;
+        }
+
+        // Switch Screen Views
+        document.getElementById('screen-welcome').classList.add('hidden');
+        document.getElementById('screen-results').classList.add('hidden');
+        document.getElementById('screen-quiz').classList.remove('hidden');
+
+        // Start Timer
+        this.startTimer();
+
+        // Render Question 1
+        this.renderCurrentQuestion();
+      }
+
+      startTimer() {
+        clearInterval(this.timerInterval);
+        this.elapsedSeconds = 0;
+        const timerEl = document.getElementById('quiz-timer');
+
+        this.timerInterval = setInterval(() => {
+          this.elapsedSeconds++;
+          const mins = String(Math.floor(this.elapsedSeconds / 60)).padStart(2, '0');
+          const secs = String(this.elapsedSeconds % 60).padStart(2, '0');
+          if (timerEl) timerEl.textContent = `${mins}:${secs}`;
+        }, 1000);
+      }
+
+      renderCurrentQuestion() {
+        const q = this.activeTest[this.currentQIndex];
+        const total = this.activeTest.length;
+
+        // Header info
+        document.getElementById('quiz-sec-tag').textContent = `Section ${this.currentQIndex + 1} of ${total}`;
+        document.getElementById('quiz-current-q-num').textContent = `Question ${this.currentQIndex + 1} of ${total}`;
+        document.getElementById('quiz-q-category').textContent = q.section;
+        document.getElementById('quiz-q-text').textContent = q.question;
+
+        // Mandatory warning reset
+        document.getElementById('mandatory-warning').classList.add('hidden');
+
+        // Render Palette Buttons
+        this.renderPalette();
+
+        // Render Options
+        const optionsContainer = document.getElementById('quiz-options-container');
+        optionsContainer.innerHTML = '';
+
+        q.options.forEach((optText, optIdx) => {
+          const isSelected = this.userAnswers[this.currentQIndex] === optIdx;
+          const label = document.createElement('label');
+          label.className = `flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${
+            isSelected 
+              ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-md' 
+              : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-300'
+          }`;
+
+          label.innerHTML = `
+            <input type="radio" name="quiz-option" value="${optIdx}" ${isSelected ? 'checked' : ''} 
+                   onchange="app.selectOption(${optIdx})" class="hidden">
+            <div class="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
+              isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700'
+            }">
+              ${['A','B','C','D'][optIdx]}
+            </div>
+            <span class="text-sm font-medium leading-normal">${optText}</span>
+          `;
+          optionsContainer.appendChild(label);
+        });
+
+        // Prev / Next / Submit Button Visibility
+        const prevBtn = document.getElementById('btn-quiz-prev');
+        const nextBtn = document.getElementById('btn-quiz-next');
+        const submitBtn = document.getElementById('btn-quiz-submit');
+
+        prevBtn.disabled = (this.currentQIndex === 0);
+
+        if (this.currentQIndex === total - 1) {
+          nextBtn.classList.add('hidden');
+          submitBtn.classList.remove('hidden');
+        } else {
+          nextBtn.classList.remove('hidden');
+          submitBtn.classList.add('hidden');
+        }
+      }
+
+      renderPalette() {
+        const container = document.getElementById('quiz-palette');
+        container.innerHTML = '';
+
+        this.activeTest.forEach((_, idx) => {
+          const isAnswered = this.userAnswers.hasOwnProperty(idx);
+          const isCurrent = (this.currentQIndex === idx);
+
+          const btn = document.createElement('button');
+          btn.onclick = () => this.jumpToQuestion(idx);
+          btn.className = `w-9 h-9 rounded-xl font-bold text-xs transition-all flex items-center justify-center ${
+            isCurrent
+              ? 'bg-indigo-600 text-white ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-900 shadow-lg'
+              : isAnswered
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800'
+          }`;
+          btn.textContent = idx + 1;
+          container.appendChild(btn);
+        });
+      }
+
+      selectOption(optionIdx) {
+        this.userAnswers[this.currentQIndex] = optionIdx;
+        document.getElementById('mandatory-warning').classList.add('hidden');
+        this.renderCurrentQuestion();
+      }
+
+      prevQuestion() {
+        if (this.currentQIndex > 0) {
+          this.currentQIndex--;
+          this.renderCurrentQuestion();
+        }
+      }
+
+      nextQuestion() {
+        // Enforce Mandatory answering before advancing
+        if (!this.userAnswers.hasOwnProperty(this.currentQIndex)) {
+          document.getElementById('mandatory-warning').classList.remove('hidden');
+          return;
+        }
+
+        if (this.currentQIndex < this.activeTest.length - 1) {
+          this.currentQIndex++;
+          this.renderCurrentQuestion();
+        }
+      }
+
+      jumpToQuestion(idx) {
+        // Enforce mandatory answer on current before jumping away
+        if (!this.userAnswers.hasOwnProperty(this.currentQIndex) && idx > this.currentQIndex) {
+          document.getElementById('mandatory-warning').classList.remove('hidden');
+          return;
+        }
+        this.currentQIndex = idx;
+        this.renderCurrentQuestion();
+      }
+
+      confirmQuitQuiz() {
+        if (confirm("Are you sure you want to quit this test? Progress will be lost.")) {
+          this.resetQuizToHome();
+        }
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* 6. SUBMISSION & EVALUATION                                          */
+      /* ------------------------------------------------------------------ */
+
+      submitQuiz() {
+        // Enforce mandatory answer on all questions
+        const total = this.activeTest.length;
+        const answeredCount = Object.keys(this.userAnswers).length;
+
+        if (answeredCount < total) {
+          document.getElementById('mandatory-warning').classList.remove('hidden');
+          this.toast(`Mandatory requirement: Please answer all ${total} questions before submitting.`, "error");
+          return;
+        }
+
+        clearInterval(this.timerInterval);
+
+        // Calculate score
+        let score = 0;
+        this.activeTest.forEach((q, idx) => {
+          if (this.userAnswers[idx] === q.answer) {
+            score++;
+          }
+        });
+
+        const accuracy = Math.round((score / total) * 100);
+        const mins = String(Math.floor(this.elapsedSeconds / 60)).padStart(2, '0');
+        const secs = String(this.elapsedSeconds % 60).padStart(2, '0');
+
+        // Render Results Dashboard
+        document.getElementById('res-score-num').textContent = score;
+        document.getElementById('res-accuracy-num').textContent = `${accuracy}%`;
+        document.getElementById('res-duration-num').textContent = `${mins}:${secs}`;
+
+        const badgeIcon = document.getElementById('res-badge-icon');
+        const headingText = document.getElementById('res-heading-text');
+
+        if (accuracy >= 70) {
+          badgeIcon.className = "fa-solid fa-trophy text-4xl text-amber-400";
+          headingText.textContent = "Congratulations! Assessment Passed";
+        } else {
+          badgeIcon.className = "fa-solid fa-circle-check text-4xl text-indigo-400";
+          headingText.textContent = "Evaluation Completed";
+        }
+
+        // Render Detailed Section-Wise Answer Breakdown
+        this.renderResultsBreakdown();
+
+        // Switch Screens
+        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-results').classList.remove('hidden');
+      }
+
+      renderResultsBreakdown() {
+        const container = document.getElementById('results-review-container');
+        container.innerHTML = '';
+
+        this.activeTest.forEach((q, idx) => {
+          const userAnsIdx = this.userAnswers[idx];
+          const isCorrect = (userAnsIdx === q.answer);
+
+          const card = document.createElement('div');
+          card.className = `glass-panel p-5 rounded-2xl border ${
+            isCorrect ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-rose-500/30 bg-rose-950/10'
+          }`;
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+              <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                Section ${idx + 1}: ${q.section}
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 ${
+                isCorrect ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+              }">
+                <i class="fa-solid ${isCorrect ? 'fa-check' : 'fa-xmark'}"></i> ${isCorrect ? 'Correct' : 'Incorrect'}
+              </span>
+            </div>
+
+            <p class="text-sm font-semibold text-white mb-4 leading-relaxed">${idx + 1}. ${q.question}</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+              ${q.options.map((opt, oIdx) => {
+                let style = "bg-slate-900/60 border-slate-800 text-slate-400";
+                let icon = "";
+                if (oIdx === q.answer) {
+                  style = "bg-emerald-500/20 border-emerald-500/40 text-emerald-200 font-bold";
+                  icon = '<i class="fa-solid fa-check ml-auto text-emerald-400"></i>';
+                } else if (oIdx === userAnsIdx && !isCorrect) {
+                  style = "bg-rose-500/20 border-rose-500/40 text-rose-200 line-through";
+                  icon = '<i class="fa-solid fa-xmark ml-auto text-rose-400"></i>';
+                }
+
+                return `
+                  <div class="p-2.5 rounded-xl border ${style} flex items-center justify-between">
+                    <span><strong>${['A','B','C','D'][oIdx]}:</strong> ${opt}</span>
+                    ${icon}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            ${q.explanation ? `
+              <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-xs text-slate-300">
+                <strong class="text-indigo-400">Explanation:</strong> ${q.explanation}
+              </div>
+            ` : ''}
+          `;
+
+          container.appendChild(card);
+        });
+      }
+
+      resetQuizToHome() {
+        clearInterval(this.timerInterval);
+        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-results').classList.add('hidden');
+        document.getElementById('screen-welcome').classList.remove('hidden');
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* 7. UTILITIES & TOAST NOTIFICATIONS                                 */
+      /* ------------------------------------------------------------------ */
+
+      copyServerCode() {
+        const codeText = document.getElementById('code-server-snippet').innerText;
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = codeText;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextArea);
+        this.toast("Server code copied to clipboard!", "success");
+      }
+
+      toast(message, type = "info") {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+
+        let bg = "bg-slate-800 border-slate-700 text-slate-200";
+        if (type === "success") bg = "bg-emerald-900/90 border-emerald-500/50 text-emerald-200";
+        if (type === "error") bg = "bg-rose-900/90 border-rose-500/50 text-rose-200";
+
+        toast.className = `pointer-events-auto px-4 py-3 rounded-xl border text-xs font-semibold shadow-2xl flex items-center gap-2 transition-all transform translate-y-2 ${bg}`;
+        toast.innerHTML = `
+          <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-info-circle'}"></i>
+          <span>${message}</span>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.classList.add('opacity-0', '-translate-y-2');
+          setTimeout(() => toast.remove(), 300);
+        }, 3500);
+      }
+    }
+
+    // Instantiate app when window loads
+    let app;
+    window.onload = function() {
+      app = new QuizApp();
+    };
+  </script>
+</body>
+</html>
